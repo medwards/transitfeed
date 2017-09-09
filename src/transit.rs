@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::error::Error;
 use chrono::{Duration, NaiveDate};
 
@@ -168,14 +169,14 @@ pub struct Shape {
 }
 
 /// Location Type
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum LocationType {
     Stop,
     Station,
 }
 
 /// Wheelchair Boarding
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum WheelchairBoarding {
     NoInformation,
     SomeAccessibility,
@@ -183,7 +184,7 @@ pub enum WheelchairBoarding {
 }
 
 /// Stop
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Stop {
     pub stop_id: String,
     pub stop_code: Option<String>,
@@ -197,6 +198,7 @@ pub struct Stop {
     pub parent_station: Option<String>,
     pub stop_timezone: Option<String>,
     pub wheelchair_boarding: WheelchairBoarding,
+    pub extended_fields: Option<HashMap<String, String>>,
 }
 
 /// PickupType for `StopTime`
