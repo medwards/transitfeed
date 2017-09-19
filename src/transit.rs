@@ -202,7 +202,7 @@ pub struct Stop {
 }
 
 /// PickupType for `StopTime`
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum PickupType {
     RegularlyScheduled,
     NoPickupAvailable,
@@ -211,7 +211,7 @@ pub enum PickupType {
 }
 
 /// DropoffType for `StopTime`
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum DropoffType {
     RegularlyScheduled,
     NoDropoffAvailable,
@@ -220,14 +220,14 @@ pub enum DropoffType {
 }
 
 /// Timepoint for `StopTime`
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Timepoint {
     Approximate,
     Exact,
 }
 
 /// StopTime
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct StopTime {
     pub trip_id: String,
     pub arrival_time: TimeOffset,
