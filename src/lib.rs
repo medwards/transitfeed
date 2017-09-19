@@ -13,7 +13,9 @@ mod archive;
 mod transit;
 mod gtfs;
 pub mod feed;
+mod run;
 
 pub use transit::*;
 pub use gtfs::{Error, GTFSIterator};
 pub use feed::{FeedReader, TransitFeed, Terminator, Trim};
+pub use run::{Run, RunIterator};
