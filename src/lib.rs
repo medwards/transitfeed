@@ -10,10 +10,12 @@ extern crate serde_derive;
 extern crate zip;
 
 mod archive;
-mod transit;
-mod gtfs;
 pub mod feed;
+mod gtfs;
+pub mod run;
+mod transit;
 
-pub use transit::*;
+pub use feed::{FeedReader, Terminator, TransitFeed, Trim};
 pub use gtfs::{Error, GTFSIterator};
-pub use feed::{FeedReader, TransitFeed, Terminator, Trim};
+pub use run::{Run, RunIterator};
+pub use transit::*;
