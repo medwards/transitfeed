@@ -38,7 +38,7 @@ pub fn parse_row(row: Zip<Iter<String>, Columns>) -> Result<Stop, ParseError>
             "stop_timezone" => { stop_timezone = Some(String::from(column)); },
             "wheelchair_boarding" => { wheelchair_boarding = parse_try!(parse_wheelchair_boarding(column)); },
             field => {
-                extended_fields = Some(extended_fields.map_or(HashMap::new(), |m| m));
+                extended_fields = Some(extended_fields.map_or(Box::new(HashMap::new()), |m| m));
                 extended_fields.as_mut().unwrap().insert(String::from(field), String::from(column));
             },
         }
@@ -113,7 +113,7 @@ mod test {
             parent_station: None,
             stop_timezone: None,
             wheelchair_boarding: WheelchairBoarding::NoInformation,
-            extended_fields: Some(expected_extended),
+            extended_fields: Some(Box::new(expected_extended)),
         };
         let result = parse_row(headers.as_slice().iter().zip(columns));
         assert_eq!(expected, result.unwrap());

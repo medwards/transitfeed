@@ -198,7 +198,7 @@ pub struct Stop {
     pub parent_station: Option<String>,
     pub stop_timezone: Option<String>,
     pub wheelchair_boarding: WheelchairBoarding,
-    pub extended_fields: Option<HashMap<String, String>>,
+    pub extended_fields: Option<Box<HashMap<String, String>>>,
 }
 
 /// PickupType for `StopTime`
