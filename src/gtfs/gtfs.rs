@@ -5,9 +5,11 @@ use std::slice::Iter;
 use quick_csv::Csv;
 use quick_csv::columns::Columns;
 
-pub struct GTFSIterator<B, F, T>
+pub struct GTFSIterator<'a, B, F, T, U, V>
     where B: BufRead,
-          F: (Fn(Zip<Iter<String>, Columns>) -> Result<T, ParseError>)
+          F: (Fn(Zip<U, V>) -> Result<T, ParseError>),
+          U: Iterator<Item=String>,
+          V: Iterator<Item=&'a str>
 {
     csv: Csv<B>,
     filename: String,
@@ -16,11 +18,13 @@ pub struct GTFSIterator<B, F, T>
     parser: F,
 }
 
-impl<B, F, T> GTFSIterator<B, F, T>
+impl<'a, B, F, T, Iter, Columns> GTFSIterator<'a, B, F, T, Iter, Columns>
     where B: BufRead,
-          F: (Fn(Zip<Iter<String>, Columns>) -> Result<T, ParseError>)
+          F: (Fn(Zip<Iter, Columns>) -> Result<T, ParseError>),
+          Iter: Iterator<Item=String>,
+          Columns: Iterator<Item=&'a str>,
 {
-    pub fn new(csv: Csv<B>, filename: String, parser: F) -> Result<GTFSIterator<B, F, T>, GtfsError> {
+    pub fn new(csv: Csv<B>, filename: String, parser: F) -> Result<GTFSIterator<'a, B, F, T, Iter, Columns>, GtfsError> {
         let mut csv = csv.has_header(true);
         let header = csv.headers();
         if header.len() == 0 {
@@ -37,9 +41,11 @@ impl<B, F, T> GTFSIterator<B, F, T>
     }
 }
 
-impl<B, F, T> Iterator for GTFSIterator<B, F, T>
+impl<'a, B, F, T, U, V> Iterator for GTFSIterator<'a, B, F, T, U, V>
     where B: BufRead,
-          F: (Fn(Zip<Iter<String>, Columns>) -> Result<T, ParseError>)
+          F: (Fn(Zip<U, V>) -> Result<T, ParseError>),
+          U: Iterator<Item=String>,
+          V: Iterator<Item=&'a str>
 {
     type Item = Result<T, GtfsError>;
 
