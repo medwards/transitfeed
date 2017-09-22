@@ -16,15 +16,16 @@ pub struct GTFSIterator<'a, B, F, T, U, V>
     header: Vec<String>,
     line: usize,
     parser: F,
+    marker: ::std::marker::PhantomData<Fn(Zip<U, V>) -> Result<T, ParseError>>,
 }
 
-impl<'a, B, F, T, Iter, Columns> GTFSIterator<'a, B, F, T, Iter, Columns>
+impl<'a, B, F, T, U, V> GTFSIterator<'a, B, F, T, U, V>
     where B: BufRead,
-          F: (Fn(Zip<Iter, Columns>) -> Result<T, ParseError>),
-          Iter: Iterator<Item=String>,
-          Columns: Iterator<Item=&'a str>,
+          F: (Fn(Zip<U, V>) -> Result<T, ParseError>),
+          U: Iterator<Item=String>,
+          V: Iterator<Item=&'a str>,
 {
-    pub fn new(csv: Csv<B>, filename: String, parser: F) -> Result<GTFSIterator<'a, B, F, T, Iter, Columns>, GtfsError> {
+    pub fn new(csv: Csv<B>, filename: String, parser: F) -> Result<GTFSIterator<'a, B, F, T, U, V>, GtfsError> {
         let mut csv = csv.has_header(true);
         let header = csv.headers();
         if header.len() == 0 {
@@ -36,6 +37,7 @@ impl<'a, B, F, T, Iter, Columns> GTFSIterator<'a, B, F, T, Iter, Columns>
                 header: header,
                 filename: filename,
                 line: 1,
+                marker: ::std::marker::PhantomData,
             })
         }
     }
@@ -44,8 +46,8 @@ impl<'a, B, F, T, Iter, Columns> GTFSIterator<'a, B, F, T, Iter, Columns>
 impl<'a, B, F, T, U, V> Iterator for GTFSIterator<'a, B, F, T, U, V>
     where B: BufRead,
           F: (Fn(Zip<U, V>) -> Result<T, ParseError>),
-          U: Iterator<Item=String>,
-          V: Iterator<Item=&'a str>
+	  U: Iterator<Item=String>,
+	  V: Iterator<Item=&'a str>,
 {
     type Item = Result<T, GtfsError>;
 
