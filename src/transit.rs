@@ -275,7 +275,7 @@ pub struct Shape {
     pub shape_dist_traveled: Option<f64>,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TimeOffset {
     pub hours: u32,
     pub minutes: u32,
