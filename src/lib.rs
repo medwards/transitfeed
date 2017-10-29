@@ -12,7 +12,9 @@ extern crate zip;
 mod transit;
 mod gtfs;
 mod run;
+mod feed;
 
 pub use transit::*;
 pub use gtfs::{GTFSIterator, Error};
 pub use run::{RunIterator, Run};
+pub use feed::TransitFeed;
