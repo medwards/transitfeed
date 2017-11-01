@@ -5,29 +5,29 @@ use transit::StopTime;
 use gtfs::Error;
 
 #[derive(Debug, PartialEq)]
-pub struct Run
+pub struct Run<'a>
 {
     pub trip: String,
     // TODO: StopTime is very verbose
     // redundant info removed from StopTime (trip id, sequence) (maybe make a trait?)
-    pub sequence: Vec<StopTime>
+    pub sequence: Vec<&'a StopTime>
 }
 
-pub struct RunIterator
+pub struct RunIterator<'a>
 {
-    runs: IntoIter<Run>
+    runs: IntoIter<Run<'a>>
 }
 
-impl RunIterator
+impl<'a> RunIterator<'a>
 {
     // TODO: return value isn't generic forcing users to specify types, very ugly
     /// Creates a RunIterator from an Iterator of StopTimes
     ///
     /// The StopTimes Iterator will be consumed so that they can be grouped and sorted
-    pub fn new<U: Iterator<Item=Result<StopTime, Error>>>(stop_times: U) -> RunIterator {
+    pub fn new<U: Iterator<Item=Result<&'a StopTime, Error>>>(stop_times: U) -> RunIterator<'a> {
         let mut run_groups = HashMap::<String, Run>::new();
         // group StopTimes by trip
-        for stop_time in stop_times.filter(|r: &Result<StopTime, Error>| r.is_ok()).map(|r| r.unwrap()) {
+        for stop_time in stop_times.filter(|r| r.is_ok()).map(|r| r.unwrap()) {
             let run = run_groups.entry(stop_time.trip_id.clone()).or_insert(Run { trip: stop_time.trip_id.clone(), sequence: vec!() });
             run.sequence.push(stop_time);
         }
@@ -47,10 +47,10 @@ impl RunIterator
     //       And panics if it does not (keep a list of completed trip_ids)
 }
 
-impl Iterator for RunIterator
+impl<'a> Iterator for RunIterator<'a>
 {
-    type Item = Run;
-    fn next(&mut self) -> Option<Run> {
+    type Item = Run<'a>;
+    fn next(&mut self) -> Option<Run<'a>> {
         self.runs.next()
     }
 }
@@ -62,24 +62,24 @@ mod test {
 
     #[test]
     fn test_form_runs_from_unsorted_sequences() {
-        let times = vec!(Result::Ok(stop_time("A", 3, None, None)),
-                         Result::Ok(stop_time("A", 2, None, None)),
-                         Result::Ok(stop_time("B", 1, None, None)),
-                         Result::Ok(stop_time("B", 2, None, None)),
-                         Result::Ok(stop_time("A", 1, None, None)),
-                         Result::Ok(stop_time("B", 3, None, None)));
-        let runs = RunIterator::new(times.into_iter());
+        let times = vec!(stop_time("A", 3, None, None),
+                         stop_time("A", 2, None, None),
+                         stop_time("B", 1, None, None),
+                         stop_time("B", 2, None, None),
+                         stop_time("A", 1, None, None),
+                         stop_time("B", 3, None, None));
+        let runs = RunIterator::new(times.iter().map(|s| Ok(s)));
         let mut result = runs.collect::<Vec<Run>>();
         result.sort_by(|a, b| a.sequence[0].trip_id.cmp(&b.sequence[0].trip_id));
 
         let expected = vec!(Run { trip: String::from("A"),
-                                  sequence: vec!(stop_time("A", 1, None, None),
-                                                 stop_time("A", 2, None, None),
-                                                 stop_time("A", 3, None, None)) },
+                                  sequence: vec!(&times[4],
+                                                 &times[1],
+                                                 &times[0]) },
                             Run { trip: String::from("B"),
-                                  sequence: vec!(stop_time("B", 1, None, None),
-                                                 stop_time("B", 2, None, None),
-                                                 stop_time("B", 3, None, None)) });
+                                  sequence: vec!(&times[2],
+                                                 &times[3],
+                                                 &times[5]) });
         assert_eq!(expected, result);
     }
 
