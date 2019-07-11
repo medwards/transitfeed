@@ -3,6 +3,7 @@ extern crate tempfile;
 use self::tempfile::{Builder, TempDir};
 use csv;
 use serde;
+use std::collections::HashMap;
 use std::fs::File;
 use std::path::Path;
 use zip;
@@ -169,4 +170,125 @@ impl<P: FeedProvider> FeedReader<P> {
         };
         Ok(GTFSIterator::new(reader, &path)?)
     }
+}
+
+/// Container for all transit records
+pub struct TransitFeed {
+    pub agencies: Vec<Agency>,
+    pub stops: Vec<Stop>,
+    pub routes: Vec<Route>,
+    pub trips: Vec<Trip>,
+    pub stoptimes: Vec<StopTime>,
+    pub calendars: Vec<Calendar>,
+    pub calendar_dates: Option<Vec<CalendarDate>>,
+    pub fare_attributes: Option<Vec<FareAttribute>>,
+    pub fare_rules: Option<Vec<FareRule>>,
+    pub shapes: Option<Vec<ShapePoint>>,
+    pub frequencies: Option<Vec<Frequency>>,
+    pub transfers: Option<Vec<Transfer>>,
+    pub feedinfo: Option<FeedInfo>,
+
+    stop_map: HashMap<String, usize>,
+    route_map: HashMap<String, usize>,
+    trip_map: HashMap<String, usize>,
+}
+
+impl TransitFeed {
+    pub fn from_reader<P: FeedProvider>(reader: &FeedReader<P>) -> Result<TransitFeed, Error> {
+        let agencies = load_feed_file(reader.agencies()?);
+        let stops = load_feed_file(reader.stops()?);
+        let routes = load_feed_file(reader.routes()?);
+        let trips = load_feed_file(reader.trips()?);
+        let stoptimes = load_feed_file(reader.stop_times()?);
+        let calendars = load_feed_file(reader.calendars()?);
+
+        let stop_map = make_map(&stops, |stop: &Stop| stop.stop_id.clone());
+        let route_map = make_map(&routes, |route: &Route| route.route_id.clone());
+        let trip_map = make_map(&trips, |trip: &Trip| trip.trip_id.clone());
+
+        Ok(TransitFeed {
+            agencies: agencies,
+            stops: stops,
+            stop_map: stop_map,
+            routes: routes,
+            route_map: route_map,
+            trips: trips,
+            trip_map: trip_map,
+            stoptimes: stoptimes,
+            calendars: calendars,
+            calendar_dates: load_optional_feed_file(reader.calendar_dates()),
+            fare_attributes: load_optional_feed_file(reader.fare_attributes()),
+            fare_rules: load_optional_feed_file(reader.fare_rules()),
+            shapes: load_optional_feed_file(reader.shapes()),
+            frequencies: load_optional_feed_file(reader.frequencies()),
+            transfers: load_optional_feed_file(reader.transfers()),
+            feedinfo: match load_optional_feed_file(reader.feed_info()) {
+                Some(mut records) => {
+                    if records.len() != 1 {
+                        println!("Unexpected number of entries in feed_info.txt");
+                    }
+                    records.pop()
+                }
+                None => None,
+            },
+        })
+    }
+
+    pub fn find_stop(&self, id: &str) -> Option<&Stop> {
+        TransitFeed::find_record(id, &self.stop_map, &self.stops)
+    }
+
+    pub fn find_route(&self, id: &str) -> Option<&Route> {
+        TransitFeed::find_record(id, &self.route_map, &self.routes)
+    }
+
+    pub fn find_trip(&self, id: &str) -> Option<&Trip> {
+        TransitFeed::find_record(id, &self.trip_map, &self.trips)
+    }
+
+    fn find_record<'a, T>(
+        record_id: &str,
+        map: &HashMap<String, usize>,
+        records: &'a Vec<T>,
+    ) -> Option<&'a T> {
+        map.get(record_id).map(|index| &records[*index])
+    }
+}
+
+// TODO: Need to log stuff here
+fn load_feed_file<R, T>(iter: GTFSIterator<R, T>) -> Vec<T>
+where
+    R: std::io::Read,
+    for<'de> T: serde::Deserialize<'de>,
+{
+    iter.filter_map(|r| match r {
+        Ok(r) => Some(r),
+        Err(e) => {
+            println!("SKIPPING - {}", e);
+            None
+        }
+    })
+    .collect()
+}
+
+fn load_optional_feed_file<R, T>(result: Result<GTFSIterator<R, T>, Error>) -> Option<Vec<T>>
+where
+    R: std::io::Read,
+    for<'de> T: serde::Deserialize<'de>,
+{
+    match result {
+        Ok(iter) => Some(load_feed_file(iter)),
+        Err(e) => {
+            println!("SKIPPING optional file - {}", e);
+            None
+        }
+    }
+}
+
+fn make_map<T, F: Fn(&T) -> String>(records: &Vec<T>, key_fn: F) -> HashMap<String, usize> {
+    records
+        .iter()
+        .enumerate()
+        .map(|(index, record)| (key_fn(record), index))
+        .collect()
 }
