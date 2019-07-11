@@ -16,4 +16,4 @@ pub mod feed;
 
 pub use transit::*;
 pub use gtfs::{Error, GTFSIterator};
-pub use feed::{FeedReader, Terminator, Trim};
+pub use feed::{FeedReader, TransitFeed, Terminator, Trim};
