@@ -62,14 +62,3 @@ where
         },
     }
 }
-
-//#[test]
-//fn parse_timeoffset_test() {
-//    assert_eq!(parse_timeoffset("01:01:01").unwrap(), TimeOffset::from_hms(1, 1, 1));
-//    assert_eq!(parse_timeoffset("1:01:01").unwrap(), TimeOffset::from_hms(1, 1, 1));
-//    assert_eq!(parse_timeoffset("01:01:01  ").unwrap(), TimeOffset::from_hms(1, 1, 1));
-//    assert_eq!(parse_timeoffset(" 01:01:01  ").unwrap(), TimeOffset::from_hms(1, 1, 1));
-//    assert!(parse_timeoffset(":01:01").is_err());
-//    assert!(parse_timeoffset("ab:01:01").is_err());
-//    assert!(parse_timeoffset("01::01").is_err());
-//}
